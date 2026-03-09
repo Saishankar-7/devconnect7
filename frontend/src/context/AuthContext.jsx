@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Setup Axios Defaults
-  // Change localhost to deployed backend url later
-  axios.defaults.baseURL = 'http://localhost:5000/api';
+  // Uses environment variable for production, falls back to localhost for local dev
+  axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
     const userInfo = localStorage.getItem('userInfo');

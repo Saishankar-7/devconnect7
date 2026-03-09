@@ -11,7 +11,8 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       // Initialize Socket connection globally
-      const newSocket = io('http://localhost:5000');
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+      const newSocket = io(socketUrl);
       
       newSocket.on('connect', () => {
         // Register the user globally
