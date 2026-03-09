@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Setup Axios Defaults
-  // Uses environment variable for production, falls back to localhost for local dev
+  // Uses VITE_API_URL if deployed, otherwise falls back to localhost
   axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
