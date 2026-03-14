@@ -16,30 +16,26 @@ import { SocketProvider } from './context/SocketContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <Router>
-          <div className="app-container">
-            <Navbar />
-            <main className="main-content">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:id" element={<UserProfile />} />
-                <Route path="/discover" element={<Discover />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/chat/:userId" element={<Chat />} />
-                <Route path="/resume" element={<ResumeViewer />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </SocketProvider>
-    </AuthProvider>
+    <Router>
+      <div className="app-container">
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<UserProfile />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:userId" element={<Chat />} />
+            <Route path="/resume" element={<ResumeViewer />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

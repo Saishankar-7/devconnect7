@@ -3,13 +3,191 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Primary Meta ── -->
   <title>DevConnect</title>
+  <meta name="description"
+    content="DevConnect bridges the gap between talented developers and employees at top tech companies. Find referrers, request referrals, and land your dream job faster." />
+  <meta name="keywords"
+    content="job referral, tech jobs, software developer, referral network, DevConnect, get hired, tech companies" />
+  <meta name="author" content="DevConnect" />
+  <meta name="theme-color" content="#38bdf8" />
+
+  <!-- ── Favicon & App Icons ── -->
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+
+  <!-- ── Open Graph (LinkedIn, Facebook, WhatsApp) ── -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://devconnect.app/" />
+  <meta property="og:title" content="DevConnect — Get Referred. Get Hired." />
+  <meta property="og:description"
+    content="Connect with employees at top tech companies who can refer you. Stop cold applying — start getting referred." />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="DevConnect" />
+
+  <!-- ── Twitter / X Card ── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://devconnect.app/" />
+  <meta name="twitter:title" content="DevConnect — Get Referred. Get Hired." />
+  <meta name="twitter:description"
+    content="Connect with employees at top tech companies who can refer you. Stop cold applying — start getting referred." />
+  <meta name="twitter:image" content="/og-image.png" />
+
+  <!-- ── Fonts ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" />
+
+  <!-- ── Critical inline styles: prevent flash of unstyled content ── -->
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #070c18;
+      --accent: #38bdf8;
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background-color: var(--bg-primary);
+      color: #f1f5f9;
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    #root {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Splash loader shown before React hydrates ── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #070c18;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 9999;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      font-family: 'Syne', system-ui, sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: -0.5px;
+    }
+
+    .splash-logo span {
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .splash-ring {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(56, 189, 248, 0.15);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: splashSpin 0.75s linear infinite;
+    }
+
+    @keyframes splashSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 179, 237, 0.2);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.4);
+    }
+
+    /* ── Selection highlight ── */
+    ::selection {
+      background: rgba(56, 189, 248, 0.25);
+      color: #f1f5f9;
+    }
+
+    ::-moz-selection {
+      background: rgba(56, 189, 248, 0.25);
+      color: #f1f5f9;
+    }
+
+    /* ── Focus ring ── */
+    :focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 
 <body>
+
+  <!-- Splash screen — hidden once React mounts -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-logo">Dev<span>Connect</span></div>
+    <div class="splash-ring"></div>
+  </div>
+
   <div id="root"></div>
+
+  <!-- Hide splash as soon as the page finishes loading -->
+  <script>
+    window.addEventListener('load', function () {
+      var splash = document.getElementById('splash');
+      if (splash) {
+        setTimeout(function () {
+          splash.classList.add('hidden');
+          setTimeout(function () { splash.remove(); }, 400);
+        }, 300);
+      }
+    });
+  </script>
+
   <script type="module" src="/src/main.jsx"></script>
 </body>
 

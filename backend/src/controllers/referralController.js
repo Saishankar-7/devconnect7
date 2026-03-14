@@ -51,7 +51,15 @@ const createReferralRequest = async (req, res) => {
     const targetSocketId = connectedUsers?.get(referrerId.toString());
     
     if (io && targetSocketId) {
-      io.to(targetSocketId).emit('newNotification', notification);
+      const notificationToSend = {
+        ...notification.toObject(),
+        sender: {
+          _id: req.user._id,
+          name: req.user.name,
+          avatarUrl: req.user.avatarUrl
+        }
+      };
+      io.to(targetSocketId).emit('newNotification', notificationToSend);
     }
 
     res.status(201).json(createdReferral);
@@ -116,7 +124,15 @@ const updateReferralStatus = async (req, res, status) => {
     const targetSocketId = connectedUsers?.get(referral.requester.toString());
     
     if (io && targetSocketId) {
-      io.to(targetSocketId).emit('newNotification', notification);
+      const notificationToSend = {
+        ...notification.toObject(),
+        sender: {
+          _id: req.user._id,
+          name: req.user.name,
+          avatarUrl: req.user.avatarUrl
+        }
+      };
+      io.to(targetSocketId).emit('newNotification', notificationToSend);
     }
 
     res.json(updatedReferral);

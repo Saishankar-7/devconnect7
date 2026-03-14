@@ -40,6 +40,17 @@ io.on('connection', (socket) => {
     socket.join(room);
   });
 
+  // Typing indicators
+  socket.on('typing', (data) => {
+    const { room, senderId } = data;
+    socket.to(room).emit('userTyping', { senderId });
+  });
+
+  socket.on('stopTyping', (data) => {
+    const { room, senderId } = data;
+    socket.to(room).emit('userStoppedTyping', { senderId });
+  });
+
   // Handle incoming messages
   socket.on('sendMessage', async (data) => {
     const { senderId, receiverId, content, room } = data;
@@ -57,7 +68,7 @@ io.on('connection', (socket) => {
       io.to(room).emit('receiveMessage', newMessage);
 
       // Create Notification for the receiver
-      const senderObj = await User.findById(senderId).select('name');
+      const senderObj = await User.findById(senderId).select('name avatarUrl');
       const notification = new Notification({
         recipient: receiverId,
         sender: senderId,
@@ -68,9 +79,19 @@ io.on('connection', (socket) => {
       await notification.save();
 
       // Emit new notification directly to receiver if they're online
+      // Manually populate sender for real-time emission
+      const notificationToSend = {
+        ...notification.toObject(),
+        sender: {
+          _id: senderId,
+          name: senderObj?.name || 'Someone',
+          avatarUrl: senderObj?.avatarUrl
+        }
+      };
+
       const receiverSocketId = users.get(receiverId);
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit('newNotification', notification);
+        io.to(receiverSocketId).emit('newNotification', notificationToSend);
       }
     } catch (error) {
       console.error('Error saving message:', error);

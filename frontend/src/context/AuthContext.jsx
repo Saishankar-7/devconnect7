@@ -25,6 +25,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError(null);
+      
+      // Explicit cleanup before new login to prevent session crossover
+      sessionStorage.removeItem('userInfo');
+      delete axios.defaults.headers.common['Authorization'];
+      
       const { data } = await axios.post('/auth/login', { email, password });
       setUser(data);
       sessionStorage.setItem('userInfo', JSON.stringify(data));
@@ -39,6 +44,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setError(null);
+      
+      // Explicit cleanup before new registration
+      sessionStorage.removeItem('userInfo');
+      delete axios.defaults.headers.common['Authorization'];
+      
       const { data } = await axios.post('/auth/register', userData);
       setUser(data);
       sessionStorage.setItem('userInfo', JSON.stringify(data));
@@ -63,8 +73,10 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.setItem('userInfo', JSON.stringify(newUser));
   };
 
+  const clearError = () => setError(null);
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, updateUser, clearError }}>
       {children}
     </AuthContext.Provider>
   );
