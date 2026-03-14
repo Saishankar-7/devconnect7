@@ -12,9 +12,10 @@ const server = http.createServer(app);
 // Setup Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: "*",
     methods: ['GET', 'POST']
-  }
+  },
+  transports: ['websocket', 'polling']
 });
 
 const Message = require('./models/Message');
@@ -28,7 +29,7 @@ app.set('connectedUsers', users);
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
-  
+
   // Register user with their socketId
   socket.on('register', (userId) => {
     users.set(userId, socket.id);
@@ -42,7 +43,7 @@ io.on('connection', (socket) => {
   // Handle incoming messages
   socket.on('sendMessage', async (data) => {
     const { senderId, receiverId, content, room } = data;
-    
+
     try {
       // Save message to database
       const newMessage = new Message({
