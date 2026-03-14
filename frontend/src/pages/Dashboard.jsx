@@ -36,9 +36,9 @@ const Dashboard = () => {
       } else {
         await axios.put(`/referrals/${id}/reject`);
       }
-      
+
       // Update UI optimistically
-      setReferrals(referrals.map(ref => 
+      setReferrals(referrals.map(ref =>
         ref._id === id ? { ...ref, status } : ref
       ));
     } catch (error) {
@@ -75,7 +75,7 @@ const Dashboard = () => {
       </div>
 
       <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Your Referrals</h2>
-      
+
       {loading ? (
         <p>Loading...</p>
       ) : referrals.length === 0 ? (
@@ -92,7 +92,7 @@ const Dashboard = () => {
           {/* Categorized Sections */}
           {['pending', 'accepted', 'rejected'].map(statusCategory => {
             const categorizedReferrals = referrals.filter(r => r.status === statusCategory);
-            
+
             if (categorizedReferrals.length === 0) return null;
 
             return (
@@ -108,40 +108,50 @@ const Dashboard = () => {
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                           {user.role === 'developer' ? `Requested from: ${ref.referrer?.name}` : `Requested by: ${ref.requester?.name}`}
                         </p>
-                        {user.role === 'employee' && ref.requester?.resumeUrl && (
-                          <Link 
-                            to={`/resume?url=${encodeURIComponent(ref.requester.resumeUrl)}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', textDecoration: 'underline' }}
-                          >
-                            View Applicant Resume
-                          </Link>
+                        {user.role === 'employee' && (
+                          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                            {ref.requester?.resumeUrl && (
+                              <Link
+                                to={`/resume?url=${encodeURIComponent(ref.requester.resumeUrl)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', textDecoration: 'underline' }}
+                              >
+                                View Applicant Resume
+                              </Link>
+                            )}
+                            <Link
+                              to={`/profile/${ref.requester?._id}`}
+                              style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', textDecoration: 'underline' }}
+                            >
+                              View Profile
+                            </Link>
+                          </div>
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{ 
-                          padding: '0.3rem 0.8rem', 
-                          borderRadius: '1rem', 
-                          fontSize: '0.85rem', 
+                        <span style={{
+                          padding: '0.3rem 0.8rem',
+                          borderRadius: '1rem',
+                          fontSize: '0.85rem',
                           fontWeight: '600',
-                          backgroundColor: ref.status === 'accepted' ? 'rgba(16, 185, 129, 0.2)' : 
-                                           ref.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' : 
-                                           'rgba(245, 158, 11, 0.2)',
-                          color: ref.status === 'accepted' ? 'var(--success)' : 
-                                 ref.status === 'rejected' ? 'var(--danger)' : 
-                                 'var(--warning)'
+                          backgroundColor: ref.status === 'accepted' ? 'rgba(16, 185, 129, 0.2)' :
+                            ref.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' :
+                              'rgba(245, 158, 11, 0.2)',
+                          color: ref.status === 'accepted' ? 'var(--success)' :
+                            ref.status === 'rejected' ? 'var(--danger)' :
+                              'var(--warning)'
                         }}>
                           {ref.status.charAt(0).toUpperCase() + ref.status.slice(1)}
                         </span>
-                        
+
                         {user.role === 'employee' && ref.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
                             <button onClick={() => updateStatus(ref._id, 'accepted')} className="btn btn-outline" style={{ borderColor: 'var(--success)', color: 'var(--success)', padding: '0.4rem 0.6rem', fontSize: '0.75rem' }}>Accept</button>
                             <button onClick={() => updateStatus(ref._id, 'rejected')} className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: '0.4rem 0.6rem', fontSize: '0.75rem' }}>Reject</button>
                           </div>
                         )}
-                        
+
                         <Link to={`/chat/${user.role === 'developer' ? ref.referrer?._id : ref.requester?._id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
                           Chat
                         </Link>
