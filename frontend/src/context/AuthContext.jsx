@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo');
+    const userInfo = sessionStorage.getItem('userInfo');
     if (userInfo) {
       const parsedUser = JSON.parse(userInfo);
       setUser(parsedUser);
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const { data } = await axios.post('/auth/login', { email, password });
       setUser(data);
-      localStorage.setItem('userInfo', JSON.stringify(data));
+      sessionStorage.setItem('userInfo', JSON.stringify(data));
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return true;
     } catch (err) {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const { data } = await axios.post('/auth/register', userData);
       setUser(data);
-      localStorage.setItem('userInfo', JSON.stringify(data));
+      sessionStorage.setItem('userInfo', JSON.stringify(data));
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return true;
     } catch (err) {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('userInfo');
+    sessionStorage.removeItem('userInfo');
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
   };
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     // Merge existing user data with updated fields (like avatarUrl) but preserve the JWT token
     const newUser = { ...user, ...updatedData };
     setUser(newUser);
-    localStorage.setItem('userInfo', JSON.stringify(newUser));
+    sessionStorage.setItem('userInfo', JSON.stringify(newUser));
   };
 
   return (
