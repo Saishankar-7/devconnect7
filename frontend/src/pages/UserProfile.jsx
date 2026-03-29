@@ -249,8 +249,20 @@ const UserProfile = () => {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
-                  Message
+                  Chat
                 </Link>
+
+                {profileUser.resumeUrl && (
+                  <Link 
+                    to={`/resume?url=${encodeURIComponent(profileUser.resumeUrl)}&name=${encodeURIComponent(profileUser.name)}`} 
+                    className="up-hero__btn up-hero__btn--outline"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    Resume
+                  </Link>
+                )}
 
                 {canRequest && (
                   <button
@@ -320,18 +332,7 @@ const UserProfile = () => {
                         Portfolio
                       </a>
                     )}
-                    {profileUser.resumeUrl && (
-                      <Link
-                        to={`/resume?url=${encodeURIComponent(profileUser.resumeUrl)}`}
-                        className="up-link-btn up-link-btn--accent"
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                        View Resume
-                      </Link>
-                    )}
+                    {/* Moved to Hero section for better prominence */}
                   </div>
                 </Section>
               )}

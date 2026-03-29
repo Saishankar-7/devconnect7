@@ -58,7 +58,7 @@ const ReferralCard = ({ referral, user, onUpdateStatus, updating }) => {
             <div className="db-ref-card__links">
               {referral.requester?.resumeUrl && (
                 <Link
-                  to={`/resume?url=${encodeURIComponent(referral.requester.resumeUrl)}`}
+                  to={`/resume?url=${encodeURIComponent(referral.requester.resumeUrl)}&name=${encodeURIComponent(referral.requester.name)}`}
                   className="db-ref-card__link"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
