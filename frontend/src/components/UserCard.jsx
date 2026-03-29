@@ -226,6 +226,22 @@ const UserCard = ({ employee, hasRequested: initialHasRequested }) => {
           border: 1px solid rgba(167,139,250,0.2);
         }
 
+        .uc-card__rating {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: var(--uc-glow);
+          border: 1px solid rgba(56,189,248,0.2);
+          color: var(--uc-accent);
+          font-size: 0.62rem;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 100px;
+          line-height: 1.6;
+        }
+
+        .uc-card__rating-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.72rem; }
+
         .uc-card__company {
           font-size: 0.85rem;
           font-weight: 500;
@@ -355,24 +371,27 @@ const UserCard = ({ employee, hasRequested: initialHasRequested }) => {
         /* ── Success toast ── */
         .uc-card__toast {
           position: absolute;
-          top: 14px; right: 14px;
+          bottom: 12px; left: 50%;
+          transform: translateX(-50%);
           background: var(--uc-success-bg);
           border: 1px solid rgba(34,197,94,0.3);
           color: var(--uc-success);
           font-size: 0.75rem;
           font-weight: 600;
-          padding: 5px 12px;
+          padding: 6px 14px;
           border-radius: 100px;
           display: flex;
           align-items: center;
-          gap: 5px;
-          animation: ucFadeIn 0.3s ease;
-          z-index: 2;
+          gap: 6px;
+          animation: ucSlideUp 0.3s ease-out;
+          z-index: 10;
+          white-space: nowrap;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        @keyframes ucFadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes ucSlideUp {
+          from { opacity: 0; transform: translate(-50%, 8px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
         }
 
         /* ── Modal ── */
@@ -584,6 +603,12 @@ const UserCard = ({ employee, hasRequested: initialHasRequested }) => {
               <span className={`uc-card__badge ${isReferrer ? 'uc-card__badge--referrer' : 'uc-card__badge--seeker'}`}>
                 {isReferrer ? 'Referrer' : 'Seeker'}
               </span>
+              {isReferrer && (
+                <span className="uc-card__rating">
+                  <span className="uc-card__rating-icon" role="img" aria-label="Rating">⭐</span>
+                  <span className="uc-card__rating-val">{employee.rating || 0}</span>
+                </span>
+              )}
             </h3>
             {employee.company && (
               <p className="uc-card__company">

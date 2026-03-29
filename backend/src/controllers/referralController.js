@@ -107,6 +107,8 @@ const updateReferralStatus = async (req, res, status) => {
     referral.status = status;
     const updatedReferral = await referral.save();
 
+    // Rating increment is handled below to get the updated value in one atomic operation
+
     // Create Notification for the developer
     const textDesc = `Your referral request for ${referral.company} has been ${status}.`;
     const notification = new Notification({
@@ -135,7 +137,17 @@ const updateReferralStatus = async (req, res, status) => {
       io.to(targetSocketId).emit('newNotification', notificationToSend);
     }
 
-    res.json(updatedReferral);
+    let newRating = undefined;
+    if (status === 'accepted') {
+      const updatedUser = await User.findByIdAndUpdate(
+        referral.referrer, 
+        { $inc: { rating: 1, referralsCount: 1 } },
+        { new: true }
+      );
+      newRating = updatedUser.rating;
+    }
+
+    res.json({ referral: updatedReferral, newRating });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

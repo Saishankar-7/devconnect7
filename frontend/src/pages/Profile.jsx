@@ -71,6 +71,13 @@ const AvatarUploader = ({ user, uploading, onChange }) => {
           {user?.role === 'developer' ? '💻 Job Seeker' : '🏢 Referrer'}
           {user?.company && <span className="pf-avatar__company"> · {user.company}</span>}
         </p>
+        {user?.role === 'employee' && (
+          <div className="pf-avatar__rating">
+            <span className="pf-avatar__rating-icon" role="img" aria-label="Rating">⭐</span>
+            <span className="pf-avatar__rating-val">{user.rating || 0}</span>
+            <span className="pf-avatar__rating-lbl">Rating</span>
+          </div>
+        )}
         <button type="button" className="pf-avatar__change-btn" onClick={() => inputRef.current?.click()}>
           {uploading ? 'Uploading…' : 'Change photo'}
         </button>
@@ -400,7 +407,33 @@ const Profile = () => {
         }
 
         .pf-avatar__role {
-          font-size: 0.85rem; color: var(--pf-text-3); margin: 0 0 10px;
+          font-size: 0.85rem; color: var(--pf-text-3); margin: 0 0 8px;
+        }
+
+        .pf-avatar__rating {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          padding: 3px 10px;
+          border-radius: 100px;
+          margin-bottom: 12px;
+        }
+
+        .pf-avatar__rating-icon { font-size: 0.85rem; }
+        .pf-avatar__rating-val {
+          font-family: 'Syne', sans-serif;
+          font-weight: 800;
+          color: var(--pf-accent);
+          font-size: 0.9rem;
+        }
+        .pf-avatar__rating-lbl {
+          font-size: 0.65rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          color: var(--pf-text-3);
         }
 
         .pf-avatar__company { color: var(--pf-accent); }

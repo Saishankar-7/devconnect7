@@ -122,7 +122,7 @@ const ReferralCard = ({ referral, user, onUpdateStatus, updating }) => {
 
 // ─── Dashboard ────────────────────────────────────────────────────
 const Dashboard = () => {
-  const { user, loading: authLoading } = useContext(AuthContext);
+  const { user, loading: authLoading, updateUser } = useContext(AuthContext);
   const navigate    = useNavigate();
   const [referrals, setReferrals] = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -156,10 +156,17 @@ const Dashboard = () => {
   const updateStatus = async (id, status) => {
     setUpdating(id);
     try {
-      await axios.put(`/referrals/${id}/${status === 'accepted' ? 'accept' : 'reject'}`);
+      const { data } = await axios.put(`/referrals/${id}/${status === 'accepted' ? 'accept' : 'reject'}`);
+      
+      // Update the referrals list
       setReferrals((prev) =>
         prev.map((r) => (r._id === id ? { ...r, status } : r))
       );
+
+      // If it was an acceptance, update the local user's rating
+      if (status === 'accepted' && data.newRating !== undefined) {
+        updateUser({ rating: data.newRating });
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to update status. Please try again.');
@@ -344,8 +351,40 @@ const Dashboard = () => {
         .db-profile__role {
           font-size: 0.85rem;
           color: var(--db-text-3);
-          margin: 0;
+          margin: 0 0 10px;
           display: flex; align-items: center; gap: 5px;
+        }
+
+        .db-profile__rating {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          padding: 4px 12px;
+          border-radius: 100px;
+          transition: all 0.2s ease;
+        }
+
+        .db-profile__rating:hover {
+          background: rgba(56, 189, 248, 0.12);
+          border-color: rgba(56, 189, 248, 0.35);
+          transform: translateY(-1px);
+        }
+
+        .db-profile__rating-icon { font-size: 0.9rem; line-height: 1; }
+        .db-profile__rating-val {
+          font-family: 'Syne', sans-serif;
+          font-weight: 800;
+          color: var(--db-accent);
+          font-size: 1rem;
+        }
+        .db-profile__rating-lbl {
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--db-text-3);
         }
 
         .db-profile__role-badge {
@@ -745,6 +784,13 @@ const Dashboard = () => {
                     </span>
                   )}
                 </p>
+                {user.role === 'employee' && (
+                  <div className="db-profile__rating">
+                    <span className="db-profile__rating-icon" role="img" aria-label="Points">⭐</span>
+                    <span className="db-profile__rating-val">{user.rating || 0}</span>
+                    <span className="db-profile__rating-lbl">Referral Points</span>
+                  </div>
+                )}
               </div>
             </div>
 

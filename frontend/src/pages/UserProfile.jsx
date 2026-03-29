@@ -231,6 +231,13 @@ const UserProfile = () => {
                     {profileUser.company}
                   </span>
                 )}
+                {isReferrer && (
+                  <div className="up-hero__rating">
+                    <span className="up-hero__rating-icon" role="img" aria-label="Rating">⭐</span>
+                    <span className="up-hero__rating-val">{profileUser.rating || 0}</span>
+                    <span className="up-hero__rating-lbl">Rating</span>
+                  </div>
+                )}
               </div>
 
               {/* Referral sent toast */}
@@ -539,6 +546,31 @@ const fullStyles = `
   .up-hero__company {
     font-size: .875rem; color: var(--up-accent);
     display: flex; align-items: center; gap: 5px;
+  }
+
+  .up-hero__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 3px 12px;
+    border-radius: 100px;
+  }
+
+  .up-hero__rating-icon { font-size: 0.85rem; }
+  .up-hero__rating-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    color: var(--up-accent);
+    font-size: 0.95rem;
+  }
+  .up-hero__rating-lbl {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--up-text-3);
   }
 
   /* Sent toast */

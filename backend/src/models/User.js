@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   githubUrl: { type: String }, // For developers
   portfolioUrl: { type: String }, // For developers
   experience: { type: String }, // For employees
+  rating: { type: Number, default: 0 },
+  referralsCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Hash password before saving
