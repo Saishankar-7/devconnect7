@@ -61,6 +61,7 @@ const ChatBox = ({ activeUser }) => {
   const [sending,     setSending]     = useState(false);
 
   const messagesEndRef  = useRef(null);
+  const scrollContainerRef = useRef(null);
   const inputRef        = useRef(null);
   const typingTimerRef  = useRef(null);
 
@@ -137,12 +138,19 @@ const ChatBox = ({ activeUser }) => {
 
   useEffect(() => {
     fetchMessages();
-    inputRef.current?.focus();
+    // Use preventScroll so the browser doesn't jump the whole page to the input
+    inputRef.current?.focus({ preventScroll: true });
   }, [fetchMessages]);
 
   // ── Scroll to bottom ─────────────────────────────────────────────
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: messages.length <= 50 ? 'smooth' : 'auto' // smooth for small lists, instant for long ones
+      });
+    }
   }, [messages, isTyping]);
 
   // ── Typing emit ──────────────────────────────────────────────────
@@ -615,7 +623,13 @@ const ChatBox = ({ activeUser }) => {
         )}
 
         {/* ── Messages ── */}
-        <div className="cb-messages" role="log" aria-live="polite" aria-label="Messages">
+        <div 
+          className="cb-messages" 
+          role="log" 
+          aria-live="polite" 
+          aria-label="Messages"
+          ref={scrollContainerRef}
+        >
           {loading ? (
             <SkeletonMessages />
           ) : messages.length === 0 ? (

@@ -321,10 +321,8 @@ const UserProfile = () => {
                       </a>
                     )}
                     {profileUser.resumeUrl && (
-                      <a
-                        href={`/resume?url=${encodeURIComponent(profileUser.resumeUrl)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        to={`/resume?url=${encodeURIComponent(profileUser.resumeUrl)}`}
                         className="up-link-btn up-link-btn--accent"
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -332,7 +330,7 @@ const UserProfile = () => {
                           <polyline points="14 2 14 8 20 8"/>
                         </svg>
                         View Resume
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </Section>
