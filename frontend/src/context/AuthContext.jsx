@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
-    const userInfo = sessionStorage.getItem('userInfo');
+    const userInfo = localStorage.getItem('userInfo');
     if (userInfo) {
       const parsedUser = JSON.parse(userInfo);
       setUser(parsedUser);
@@ -27,12 +27,12 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       
       // Explicit cleanup before new login to prevent session crossover
-      sessionStorage.removeItem('userInfo');
+      localStorage.removeItem('userInfo');
       delete axios.defaults.headers.common['Authorization'];
       
       const { data } = await axios.post('/auth/login', { email, password });
       setUser(data);
-      sessionStorage.setItem('userInfo', JSON.stringify(data));
+      localStorage.setItem('userInfo', JSON.stringify(data));
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return true;
     } catch (err) {
@@ -46,12 +46,12 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       
       // Explicit cleanup before new registration
-      sessionStorage.removeItem('userInfo');
+      localStorage.removeItem('userInfo');
       delete axios.defaults.headers.common['Authorization'];
       
       const { data } = await axios.post('/auth/register', userData);
       setUser(data);
-      sessionStorage.setItem('userInfo', JSON.stringify(data));
+      localStorage.setItem('userInfo', JSON.stringify(data));
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return true;
     } catch (err) {
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem('userInfo');
+    localStorage.removeItem('userInfo');
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
   };
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     // Merge existing user data with updated fields (like avatarUrl) but preserve the JWT token
     const newUser = { ...user, ...updatedData };
     setUser(newUser);
-    sessionStorage.setItem('userInfo', JSON.stringify(newUser));
+    localStorage.setItem('userInfo', JSON.stringify(newUser));
   };
 
   const clearError = () => setError(null);

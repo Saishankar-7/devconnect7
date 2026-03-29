@@ -39,7 +39,15 @@ const ResumeViewer = () => {
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(resumeUrl)}&embedded=true`
     : null;
 
-  const handleBack = () => navigate(-1);
+  const handleBack = () => {
+    // If we're the only entry in the tab's history, going back would lead to a blank page.
+    // In that case, we navigate to the Dashboard instead.
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <>
@@ -355,24 +363,29 @@ const ResumeViewer = () => {
 
           {resumeUrl && (
             <div className="rv-topbar__right">
-              <a
-                href={resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rv-action-btn rv-action-btn--ghost"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                  <polyline points="15 3 21 3 21 9"/>
-                  <line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
-                <span>Open</span>
-              </a>
-              <a
-                href={resumeUrl}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(resumeUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    // Try to extract a name or default to 'Resume.pdf'
+                    link.setAttribute('download', 'Resume.pdf');
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                  } catch (err) {
+                    // Fallback to direct link if fetch fails (e.g. CORS)
+                    const link = document.createElement('a');
+                    link.href = resumeUrl;
+                    link.target = '_blank';
+                    link.download = 'Resume.pdf';
+                    link.click();
+                  }
+                }}
                 className="rv-action-btn rv-action-btn--primary"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -381,7 +394,7 @@ const ResumeViewer = () => {
                   <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 <span>Download</span>
-              </a>
+              </button>
             </div>
           )}
         </div>
