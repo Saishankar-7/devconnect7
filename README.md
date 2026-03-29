@@ -1,51 +1,55 @@
 # DevConnect
 
-DevConnect is a professional networking platform that connects developers looking for job referrals with employees who can provide them. It features real-time chat, notifications, and an integrated resume viewer.
+DevConnect is a professional networking platform that connects developers seeking job referrals with employees who can provide them. It offers a premium, real-time experience with integrated chat, personalized resume viewing, and a reputation-based rating system for referrers.
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Authentication System**: Secure JWT-based login and registration with BCrypt password hashing.
-- **Role-based Experience**: Separate dashboards for Job Seekers (Developers) and Referrers (Employees).
-- **Referral Tracking**: Submit, track, and manage referral requests with real-time status updates (Pending, Accepted, Rejected).
-- **Real-time Chat**: Fully integrated chat system with real-time messaging using Socket.io, including typing indicators.
-- **Instant Notifications**: Real-time notifications for new chat messages and referral status changes.
-- **Rich Profiles**: Customizable user profiles with avatar and resume uploads powered by Cloudinary.
-- **Discover Experts**: Powerful search system to find other professionals by name or company.
-- **Resume Viewer**: Integrated PDF/Doc viewer for quick candidate evaluation.
+### 💻 For Job Seekers (Freshers)
+- **Direct Referrals**: Easily find and request referrals from employees at top companies.
+- **Integrated Resume Viewer**: A seamless, same-tab viewing experience for PDF and Word resumes, now with personalized headers.
+- **Real-time Interaction**: Chat directly with potential referrers and receive instant notifications for request status updates.
+- **Professional Presence**: Showcase your skills, GitHub projects, and portfolio in a modern, dark-themed profile.
 
-## 🛠️ Tech Stack
+### 🏢 For Referrers (Employees)
+- **Employee Rating System**: Earn reputation points for every referral you accept. Your rating is visible on your dashboard and discovery cards.
+- **Efficient Candidate Evaluation**: Access applicant resumes directly from the Discovery page or their specialized profile view.
+- **Streamlined Workflow**: Manage all incoming requests from a centralized dashboard with easy "Accept" and "Reject" actions.
+- **Personalized Branding**: Display your current company and experience to attract the right candidates.
+
+## 🛠️ Technology Stack
 
 ### Frontend
-- **React.js**: Functional components and Hooks.
-- **Vite**: Ultra-fast build tool.
-- **Socket.io Client**: For real-time communication.
-- **Axios**: Promised-based HTTP client for API requests.
-- **CSS Modules**: Scoped and modular styling.
+- **React.js**: Modern functional components with Hooks and Context API for global state management.
+- **Vite**: High-performance development and build environment.
+- **Socket.io Client**: For real-time chat and instantaneous notifications.
+- **Axios**: Promised-based HTTP client for secure communication with the backend.
+- **Vanilla CSS**: Custom, premium styling featuring glassmorphism, HSL-tailored colors, and smooth micro-animations.
 
 ### Backend
-- **Node.js**: JavaScript runtime environment.
-- **Express.js**: Fast, unopinionated, minimalist web framework.
-- **MongoDB**: NoSQL database for flexible data storage (via Mongoose).
-- **Socket.io**: Real-time bidirectional event-based communication.
-- **JWT**: JSON Web Tokens for secure authentication.
-- **Cloudinary**: Cloud-based image and file management.
+- **Node.js & Express.js**: Fast and scalable server architecture.
+- **MongoDB & Mongoose**: Flexible NoSQL database with schema modeling.
+- **Socket.io**: Real-time, event-based communication for chat and alerts.
+- **JWT (JSON Web Tokens)**: Secure, cross-tab authentication and authorization.
+- **Cloudinary**: Cloud storage for avatars and resumes, ensuring high availability and fast delivery.
 
 ## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
-- [Node.js](https://nodejs.org/) (v14 or higher)
+- [Node.js](https://nodejs.org/) (v16 or higher)
 - [MongoDB](https://www.mongodb.com/) (Local or Atlas)
+- [Cloudinary Account](https://cloudinary.com/) (Free tier available)
 
 ## ⚙️ Project Setup
 
-### 1. Clone the Repository
+### 1. Clone & Install
 ```bash
 git clone <your-repository-url>
 cd DevConnect
+# Install all dependencies (Backend and Frontend)
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-### 2. Backend Configuration
-Navigate to the `backend/` directory and create a `.env` file:
+### 2. Environment Configuration
+Create a `.env` file in the `backend/` directory:
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
@@ -55,25 +59,18 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
 
-Install dependencies and start the server:
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 3. Frontend Configuration
-Navigate to the `frontend/` directory and create a `.env` file:
+Create a `.env` file in the `frontend/` directory:
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
 ```
 
-Install dependencies and start the development server:
+### 3. Run the Application
+In separate terminal windows:
 ```bash
-cd frontend
-npm install
-npm run dev
+# Backend
+cd backend && npm run dev
+
+# Frontend
+cd frontend && npm run dev
 ```
-
-
