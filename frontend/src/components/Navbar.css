@@ -77,15 +77,10 @@
   gap: 0.35rem;
   flex-shrink: 0;
 }
-.navbar__logo-mark {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  color: #080c14;
+.navbar__logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 .navbar__logo-accent { color: var(--accent); }
 

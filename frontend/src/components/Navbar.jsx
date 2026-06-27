@@ -126,7 +126,7 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="navbar__logo">
-            <span className="navbar__logo-mark">⚡</span>
+            <img src="/logo.png" alt="DevConnect Logo" className="navbar__logo-img" />
             Dev<span className="navbar__logo-accent">Connect</span>
           </Link>
 
