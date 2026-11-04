@@ -1,157 +1,194 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Logo from '../components/ui/Logo';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import './Login.css';
-
-const EyeIcon = ({ open }) =>
-  open ? (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [shakeError, setShakeError] = useState(false);
 
-  const { login, error, user, clearError } = useContext(AuthContext);
+  const { user, login, error, clearError } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Clear error on mount
   useEffect(() => {
     clearError();
-  }, [clearError]);
-
-  // Shake animation re-trigger when a new error arrives
-  useEffect(() => {
-    if (error) {
-      setShakeError(false);
-      // force reflow so animation fires again on repeated errors
-      requestAnimationFrame(() => setShakeError(true));
+    if (user) {
+      navigate('/dashboard', { replace: true });
     }
-  }, [error]);
+  }, [clearError, user, navigate]);
 
-  const submitHandler = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !password) return;
+
     setLoading(true);
     const success = await login(email, password);
     setLoading(false);
-    if (success) navigate('/dashboard');
+    if (success) {
+      const redirectPath = location.state?.from?.pathname || '/dashboard';
+      navigate(redirectPath, { replace: true });
+    }
   };
 
   return (
-    <div className="login-page">
-      {/* Background blobs */}
-      <div className="login-page__blob login-page__blob--1" />
-      <div className="login-page__blob login-page__blob--2" />
+    <div className="auth-page">
+      <div className="auth-container">
+        {/* Left Side: Brand Story */}
+        <div className="auth-brand-side">
+          <div>
+            <Logo size="lg" to="/" />
+          </div>
 
-      <div className={`login-card${shakeError ? ' shake' : ''}`}>
+          <div className="auth-brand-content">
+            <h2 className="auth-brand-heading">
+              Your direct bridge to top engineering referrals.
+            </h2>
+            <p className="auth-brand-sub">
+              Sign in to connect with verified referrers at Google, Microsoft, Stripe, and Meta. Track your referrals in real-time.
+            </p>
 
-        {/* Logo mark */}
-        <div className="login-card__logo">
-          <div className="login-card__logo-mark">⚡</div>
+            <div className="auth-stats-grid">
+              <div>
+                <div className="auth-stat-item__num">4,200+</div>
+                <div className="auth-stat-item__label">Developers Referred</div>
+              </div>
+              <div>
+                <div className="auth-stat-item__num">320+</div>
+                <div className="auth-stat-item__label">Partner Tech Companies</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: '#94A3B8' }}>
+            <ShieldCheck size={16} color="#3B82F6" />
+            <span>Secure 256-bit encryption · Official verified employees</span>
+          </div>
         </div>
 
-        {/* Heading */}
-        <h2 className="login-card__title">Welcome back</h2>
-        <p className="login-card__subtitle">Sign in to your DevConnect account</p>
-
-        {/* Error banner */}
-        {error && (
-          <div className="login-error" role="alert">
-            <span className="login-error__icon">⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Form */}
-        <form className="login-form" onSubmit={submitHandler} noValidate>
-
-          {/* Email */}
-          <div className="field">
-            <label className="field__label" htmlFor="email">Email address</label>
-            <div className="field__input-wrap">
-              <span className="field__icon">✉️</span>
-              <input
-                id="email"
-                type="email"
-                className="field__input"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-                disabled={loading}
-              />
+        {/* Right Side: Login Form */}
+        <div className="auth-form-side">
+          <div className="auth-card-inner">
+            <div className="auth-header">
+              <h1 className="auth-title">Welcome back</h1>
+              <p className="auth-subtitle">Sign in to your DevConnect account</p>
             </div>
-          </div>
 
-          {/* Password */}
-          <div className="field">
-            <div className="field__row">
-              <label className="field__label" htmlFor="password">Password</label>
-              <Link to="/forgot-password" className="field__forgot">Forgot password?</Link>
-            </div>
-            <div className="field__input-wrap">
-              <span className="field__icon">🔒</span>
-              <input
-                id="password"
-                type={showPass ? 'text' : 'password'}
-                className="field__input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                disabled={loading}
-              />
-              <button
-                type="button"
-                className="field__toggle"
-                onClick={() => setShowPass((v) => !v)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
-                tabIndex={-1}
-              >
-                <EyeIcon open={showPass} />
-              </button>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="login-submit"
-            disabled={loading || !email || !password}
-          >
-            {loading ? (
-              <>
-                <span className="spinner" />
-                Signing in…
-              </>
-            ) : (
-              'Sign in →'
+            {error && (
+              <div className="auth-error" role="alert">
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
             )}
-          </button>
-        </form>
 
-        {/* Divider */}
-        <div className="login-divider">or</div>
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="form-group">
+                <label className="form-label" htmlFor="email">
+                  Email Address
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-subtle)',
+                      display: 'flex',
+                    }}
+                  >
+                    <Mail size={16} />
+                  </span>
+                  <input
+                    id="email"
+                    type="email"
+                    className="form-input"
+                    style={{ paddingLeft: '36px' }}
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
 
-        {/* Footer */}
-        <p className="login-card__footer">
-          Don't have an account?{' '}
-          <Link to="/register">Create one free</Link>
-        </p>
+              <div className="form-group">
+                <div className="form-label">
+                  <label htmlFor="password">Password</label>
+                  <Link
+                    to="/forgot-password"
+                    style={{ fontSize: '0.78125rem', color: 'var(--primary-blue)', fontWeight: 500 }}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-subtle)',
+                      display: 'flex',
+                    }}
+                  >
+                    <Lock size={16} />
+                  </span>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    style={{ paddingLeft: '36px', paddingRight: '40px' }}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary auth-submit-btn"
+                disabled={loading || !email || !password}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="auth-footer">
+              Don't have an account yet?{' '}
+              <Link to="/register">Create one free</Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

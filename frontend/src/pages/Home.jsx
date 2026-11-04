@@ -1,243 +1,437 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import UserAvatar from '../components/ui/UserAvatar';
+import { RoleBadge, SkillBadge } from '../components/ui/Badge';
+import ScrollReveal from '../components/ui/ScrollReveal';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import { 
+  ArrowRight, 
+  Sparkles, 
+  CheckCircle2, 
+  Building2, 
+  Briefcase, 
+  MessageSquare, 
+  FileText, 
+  ShieldCheck, 
+  Zap, 
+  Users, 
+  Compass,
+  Star,
+  Clock,
+  TrendingUp,
+  Award
+} from 'lucide-react';
 import './Home.css';
 
-/* ─── Static data ──────────────────────────────────── */
 const STATS = [
-  { number: '4,200+', label: 'Developers placed' },
-  { number: '320+', label: 'Partner companies' },
-  { number: '89%', label: 'Referral success rate' },
-  { number: '< 2wk', label: 'Avg. time to referral' },
+  { num: '4,200+', label: 'Developers Placed via Referrals' },
+  { num: '320+', label: 'Verified Tech Partner Companies' },
+  { num: '89%', label: 'Referral Response Rate' },
+  { num: '< 2 Wks', label: 'Average Time to First Interview' },
 ];
 
-const STEPS = [
+const HOW_IT_WORKS = [
   {
-    number: '01',
-    icon: '🧑‍💻',
-    title: 'Create your profile',
-    desc: 'Showcase your skills, experience, and the roles you\'re targeting. Stand out with a developer-first profile built for tech hiring.',
+    step: '01',
+    title: 'Create Your Profile',
+    desc: 'Showcase your technical stack, projects, and career aspirations. Upload your resume with verified credentials.',
+    icon: Users,
   },
   {
-    number: '02',
-    icon: '🔍',
-    title: 'Find your referrer',
-    desc: 'Browse employees at top companies filtered by company, tech stack, or role. Every profile shows response rate and availability.',
+    step: '02',
+    title: 'Discover Professionals',
+    desc: 'Search verified software engineers and employees at top tech companies filtered by stack, seniority, or company.',
+    icon: Compass,
   },
   {
-    number: '03',
-    icon: '🚀',
-    title: 'Get referred',
-    desc: 'Chat directly, share your resume, and track every referral request from sent to submitted — all in one place.',
-  },
-];
-
-const FEATURES = [
-  {
-    icon: '🔎',
-    title: 'Smart Employee Search',
-    desc: 'Filter by company, tech stack, role, or seniority. Find the exact person who can refer you into your dream team.',
-    highlight: false,
+    step: '03',
+    title: 'Connect & Request Referrals',
+    desc: 'Send personalized referral requests directly to working engineers. Share your target role link and portfolio in one click.',
+    icon: Briefcase,
   },
   {
-    icon: '💬',
-    title: 'Real‑time Messaging',
-    desc: 'End-to-end encrypted chat built into the platform. No cold DMs on LinkedIn — every conversation has context.',
-    highlight: true,
-  },
-  {
-    icon: '📋',
-    title: 'Referral Tracker',
-    desc: 'A live dashboard for every referral: Pending → In Review → Submitted → Hired. Never lose track of an application again.',
-    highlight: false,
-  },
-  {
-    icon: '📄',
-    title: 'Resume Sharing',
-    desc: 'Attach your resume directly inside a chat thread. Referrers see everything they need without leaving the platform.',
-    highlight: false,
-  },
-  {
-    icon: '🏢',
-    title: 'Company Insights',
-    desc: 'Browse open roles, team culture notes, and interview tips shared by employees — before you even send your first message.',
-    highlight: false,
-  },
-  {
-    icon: '🔔',
-    title: 'Instant Notifications',
-    desc: 'Get alerted the moment a referrer responds, or when your referral status changes. No more checking and waiting.',
-    highlight: false,
+    step: '04',
+    title: 'Start Your Career Journey',
+    desc: 'Chat directly, track your referral milestones through interview stages, and land your dream tech role.',
+    icon: Sparkles,
   },
 ];
 
-/* ─── Sub-components ───────────────────────────────── */
-const HeroVisual = () => (
-  <div className="hero__visual anim-fade-up anim-delay-4">
-    {/* Job card */}
-    <div className="hero-card hero-card--main">
-      <div className="hero-card__logo">🏢</div>
-      <div>
-        <div className="hero-card__company">Stripe</div>
-        <div className="hero-card__role">Senior Frontend Engineer</div>
-      </div>
-      <span className="hero-card__badge">Referring</span>
-    </div>
+const PLATFORM_BENEFITS = [
+  {
+    icon: Zap,
+    title: 'Skip the ATS Resume Black Hole',
+    desc: 'Internal employee referrals receive up to 4x higher interview call rates compared to applying blindly through job boards.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Verified Working Engineers',
+    desc: 'Connect with actual engineers and professionals at Google, Stripe, Meta, and Microsoft ready to champion your candidacy.',
+  },
+  {
+    icon: MessageSquare,
+    title: 'Direct 1:1 Messaging',
+    desc: 'Engage in contextual conversations directly on the platform without awkward cold messages or unanswered emails.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Live Milestone Tracker',
+    desc: 'Follow your referral progress transparently from request submission to review, referral submission, and interview.',
+  },
+  {
+    icon: FileText,
+    title: 'Direct Resume Sharing',
+    desc: 'Securely attach your resume to your profile so referrers can inspect your qualifications without leaving the application.',
+  },
+  {
+    icon: Award,
+    title: 'Employee Recognition',
+    desc: 'Employees gain referral points, mentorship status, and build strong pipelines for their engineering teams.',
+  },
+];
 
-    {/* Chat preview */}
-    <div className="hero-card hero-card--chat">
-      <div className="chat-bubble chat-bubble--in">
-        Hey! I saw your profile — your React experience is solid 👀
-      </div>
-      <div className="chat-bubble chat-bubble--out">
-        Thanks! I'd love a referral for the frontend role 🙏
-      </div>
-    </div>
+const FEATURED_PROFESSIONALS = [
+  {
+    name: 'Sarah Chen',
+    role: 'employee',
+    company: 'Stripe',
+    experience: 'Staff Frontend Engineer · 6+ yrs',
+    bio: 'Passionate about React performance, modern architecture, and helping college grads transition into high-growth fintech.',
+    skills: ['React', 'TypeScript', 'Node.js', 'System Design'],
+    rating: 24,
+  },
+  {
+    name: 'David Miller',
+    role: 'employee',
+    company: 'Google',
+    experience: 'Senior Software Engineer · 5+ yrs',
+    bio: 'Infrastructure & Cloud systems. Happy to review resumes and refer motivated backend engineers for Cloud & Core teams.',
+    skills: ['Go', 'Kubernetes', 'Python', 'Distributed Systems'],
+    rating: 19,
+  },
+  {
+    name: 'Priya Sharma',
+    role: 'employee',
+    company: 'Meta',
+    experience: 'Software Engineer II · 4+ yrs',
+    bio: 'Full-stack product engineer. Excited to connect with ambitious new grads and junior developers targeting product roles.',
+    skills: ['GraphQL', 'React', 'Python', 'Mobile'],
+    rating: 15,
+  },
+  {
+    name: 'Marcus Vance',
+    role: 'employee',
+    company: 'Microsoft',
+    experience: 'Principal Dev Lead · 8+ yrs',
+    bio: 'Azure Developer Experience lead. Mentoring passionate developers and referring top talent for our engineering teams.',
+    skills: ['C#', 'Azure', 'TypeScript', 'Microservices'],
+    rating: 31,
+  },
+];
 
-    {/* Status card */}
-    <div className="hero-card hero-card--status">
-      <div className="status-icon">✅</div>
-      <div>
-        <div className="status-label">Referral status</div>
-        <div className="status-value">Submitted to Hiring Manager</div>
-      </div>
-    </div>
-  </div>
-);
-
-/* ─── Main Component ───────────────────────────────── */
 const Home = () => {
+  const { user } = useContext(AuthContext);
+
   return (
     <div className="home-page">
+      {/* ── 1. Hero Section ── */}
+      <section className="landing-hero">
+        {/* Floating Ambient Gradient Blobs */}
+        <div className="hero-ambient-blob-1" aria-hidden="true" />
+        <div className="hero-ambient-blob-2" aria-hidden="true" />
 
-      {/* ── Hero ─────────────────────────────────────── */}
-      <section className="hero">
-        <div className="hero__blob hero__blob--1" />
-        <div className="hero__blob hero__blob--2" />
-
-        <div className="container">
-          <div className="hero__inner">
-
-            {/* Left: copy */}
-            <div className="hero__copy">
-              <h1 className="hero__title anim-fade-up anim-delay-1">
-                Get Referred to Your{' '}
-                <span className="hero__title-accent">Dream Tech Job</span>
-              </h1>
-
-              <p className="hero__subtitle anim-fade-up anim-delay-2">
-                Connect directly with employees at top tech companies.
-                Skip the filters, build real relationships, and land the
-                referral that gets your resume seen.
-              </p>
-
-              <div className="hero__ctas anim-fade-up anim-delay-3">
-                <Link to="/register?role=seeker" className="btn btn-primary">
-                  Get Referred →
-                </Link>
-                <Link to="/register?role=referrer" className="btn btn-outline">
-                  Refer Developers
-                </Link>
-              </div>
-
-              <div className="hero__social-proof anim-fade-up anim-delay-4">
-                <div className="hero__avatars">
-                  {['🧑', '👩', '🧑‍🦱', '👨‍🦲'].map((emoji, i) => (
-                    <div className="hero__avatar" key={i}>{emoji}</div>
-                  ))}
-                </div>
-                <span>Join 4,200+ developers already placed</span>
-              </div>
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="landing-hero__inner">
+            <div className="landing-badge">
+              <Sparkles size={15} color="#3B82F6" />
+              <span>Next-Generation Employee Referral Platform</span>
             </div>
 
-            {/* Right: visual mockup */}
-            <HeroVisual />
-          </div>
-        </div>
-      </section>
+            <h1 className="landing-title">
+              Your Next Opportunity Starts With a{' '}
+              <span className="landing-title__gradient">Connection.</span>
+            </h1>
 
-      {/* ── Stats Bar ────────────────────────────────── */}
-      <div className="stats">
-        <div className="container">
-          <div className="stats__grid">
-            {STATS.map((stat, i) => (
-              <React.Fragment key={i}>
-                <div className="stats__item">
-                  <div className="stats__item-number">{stat.number}</div>
-                  <div className="stats__item-label">{stat.label}</div>
-                </div>
-                {i < STATS.length - 1 && <div className="stats__divider" />}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── How It Works ─────────────────────────────── */}
-      <section className="how-it-works">
-        <div className="container">
-          <div className="how-it-works__header">
-            <p className="section-eyebrow">How it works</p>
-            <h2 className="section-title">Three steps to your next role</h2>
-            <p className="section-subtitle">
-              DevConnect cuts through the noise. No cold applying, no ATS black
-              holes — just direct access to people who can open doors.
+            <p className="landing-subtitle">
+              DevConnect bridges the gap between ambitious students, job seekers, and verified software engineers at top tech companies to unlock real career referrals.
             </p>
+
+            <div className="landing-ctas">
+              <Link to={user ? "/discover" : "/login"} className="btn btn-primary btn-lg" style={{ gap: '8px' }}>
+                <span>Explore Professionals</span>
+                <ArrowRight size={18} />
+              </Link>
+              <Link to="/register" className="btn btn-outline btn-lg">
+                Join DevConnect Free
+              </Link>
+            </div>
+
+            {/* Social Trust Line */}
+            <div className="hero-social-proof" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex' }}>
+                {['#3B82F6', '#1E3A8A', '#7C3AED', '#0F766E'].map((color, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: color,
+                      border: '2px solid #FFFFFF',
+                      marginLeft: idx > 0 ? '-8px' : 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {['S', 'G', 'M', 'A'][idx]}
+                  </div>
+                ))}
+              </div>
+              <span>Joined by engineers at Stripe, Google, Meta, and Microsoft</span>
+            </div>
           </div>
 
-          <div className="steps">
-            {STEPS.map((step) => (
-              <div className="step-card" key={step.number}>
-                <div className="step-card__number">{step.number}</div>
-                <div className="step-card__icon">{step.icon}</div>
-                <h3 className="step-card__title">{step.title}</h3>
-                <p className="step-card__desc">{step.desc}</p>
+          {/* Interactive Product Dashboard Preview Mockup */}
+          <div style={{ marginTop: '3.5rem' }}>
+            <div className="preview-mockup-wrapper">
+              <div className="preview-mockup-card">
+                <div className="mockup-header">
+                  <div className="mockup-dots">
+                    <div className="mockup-dot" style={{ backgroundColor: '#EF4444' }} />
+                    <div className="mockup-dot" style={{ backgroundColor: '#F59E0B' }} />
+                    <div className="mockup-dot" style={{ backgroundColor: '#10B981' }} />
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    app.devconnect.io/dashboard
+                  </div>
+                  <div style={{ width: '40px' }} />
+                </div>
+
+                {/* Simulated UI Inside Preview */}
+                <div style={{ padding: '1.5rem', backgroundColor: '#F8FAFC' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '1rem' }}>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Referral Status</div>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#15803D', marginTop: '4px' }}>✓ Accepted by Stripe</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Forwarded to hiring manager</div>
+                    </div>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Response Rate</div>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary-blue)', marginTop: '4px' }}>89% First-week Response</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Verified employee champions</div>
+                    </div>
+                    <div style={{ backgroundColor: '#FFFFFF', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Direct 1:1 Messages</div>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--violet-600)', marginTop: '4px' }}>Real-time Chat Active</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Resume review in progress</div>
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#172554', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                        SC
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Sarah Chen · Stripe Staff Engineer</div>
+                        <div style={{ fontSize: '0.78125rem', color: 'var(--text-muted)' }}>"Loved your open-source projects! I just submitted your referral for Senior Frontend."</div>
+                      </div>
+                    </div>
+                    <Link to={user ? "/discover" : "/login"} className="btn btn-primary btn-sm">
+                      Connect Like This →
+                    </Link>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Features ─────────────────────────────────── */}
-      <section className="features">
+      {/* ── 2. Stats Ribbon with Animated Numbers ── */}
+      <section className="stats-ribbon">
         <div className="container">
-          <div className="features__header">
-            <p className="section-eyebrow">Platform features</p>
-            <h2 className="section-title">Everything you need to get hired</h2>
-          </div>
-
-          <div className="features__grid">
-            {FEATURES.map((f) => (
-              <div
-                className={`feature-card${f.highlight ? ' feature-card--highlight' : ''}`}
-                key={f.title}
-              >
-                <div className="feature-card__icon-wrap">{f.icon}</div>
-                <h3 className="feature-card__title">{f.title}</h3>
-                <p className="feature-card__desc">{f.desc}</p>
-              </div>
+          <div className="stats-grid">
+            {STATS.map((stat, idx) => (
+              <AnimatedCounter
+                key={idx}
+                value={stat.num}
+                label={stat.label}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA Banner ───────────────────────────────── */}
-      <div className="container">
-        <div className="cta-banner">
-          <h2 className="cta-banner__title">Ready to skip the queue?</h2>
-          <p className="cta-banner__sub">
-            Join DevConnect for free. It takes less than 2 minutes to set up your profile.
-          </p>
-          <div className="cta-banner__actions">
-            <Link to="/register?role=seeker" className="btn btn-primary">
-              Start as a Developer
-            </Link>
-            <Link to="/register?role=referrer" className="btn btn-outline">
-              Join as an Employee
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* ── 3. How It Works ── */}
+      <section className="landing-section">
+        <div className="container">
+          <ScrollReveal>
+            <div style={{ textAlign: 'center' }}>
+              <span className="section-eyebrow">How It Works</span>
+              <h2 className="section-heading">Four steps to unlock your next role</h2>
+              <p className="section-subheading">
+                Skip the blind online application queues. DevConnect provides a clear, collaborative path from college student to hired professional.
+              </p>
+            </div>
+          </ScrollReveal>
 
+          <ScrollReveal stagger={true} className="steps-grid">
+            {HOW_IT_WORKS.map((step, idx) => {
+              const Icon = step.icon;
+              return (
+                <div key={idx} className="step-card">
+                  <div className="step-number">{step.step}</div>
+                  <h3 className="step-title">{step.title}</h3>
+                  <p className="step-desc">{step.desc}</p>
+                </div>
+              );
+            })}
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── 4. Platform Benefits ── */}
+      <section className="landing-section" style={{ backgroundColor: '#F8FAFC', borderTop: '1px solid var(--border-main)', borderBottom: '1px solid var(--border-main)' }}>
+        <div className="container">
+          <ScrollReveal>
+            <div style={{ textAlign: 'center' }}>
+              <span className="section-eyebrow">Why DevConnect</span>
+              <h2 className="section-heading">Built specifically for tech hiring</h2>
+              <p className="section-subheading">
+                Engineers at top tech companies want to refer great developers, and talented job seekers need direct access. DevConnect solves both.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal stagger={true} className="benefits-grid">
+            {PLATFORM_BENEFITS.map((benefit, idx) => {
+              const Icon = benefit.icon;
+              return (
+                <div key={idx} className="benefit-card">
+                  <div className="benefit-icon">
+                    <Icon size={24} />
+                  </div>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    {benefit.title}
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                    {benefit.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── 5. Featured Professionals Showcase ── */}
+      <section className="landing-section">
+        <div className="container">
+          <ScrollReveal>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <span className="section-eyebrow">Meet The Network</span>
+                <h2 className="section-heading" style={{ margin: 0 }}>
+                  Featured Referrers & Engineers
+                </h2>
+              </div>
+              <Link to={user ? "/discover" : "/login"} className="btn btn-secondary btn-sm" style={{ gap: '6px' }}>
+                <span>View All Professionals</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal stagger={true} className="featured-grid">
+            {FEATURED_PROFESSIONALS.map((prof, idx) => (
+              <div
+                key={idx}
+                className="card card-hover"
+                style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                  <UserAvatar name={prof.name} size="md" showRoleDot={true} />
+                  <div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 3px' }}>
+                      {prof.name}
+                    </h4>
+                    <RoleBadge role={prof.role} company={prof.company} size="sm" />
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Briefcase size={12} />
+                  <span>{prof.experience}</span>
+                </div>
+
+                <p style={{ fontSize: '0.84375rem', color: 'var(--text-secondary)', lineHeight: 1.5, flexGrow: 1, marginBottom: '1rem' }}>
+                  {prof.bio}
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '1.25rem' }}>
+                  {prof.skills.map((s, i) => (
+                    <SkillBadge key={i} skill={s} />
+                  ))}
+                </div>
+
+                <Link to={user ? "/discover" : "/login"} className="btn btn-primary btn-sm" style={{ width: '100%' }}>
+                  Connect with {prof.name.split(' ')[0]}
+                </Link>
+              </div>
+            ))}
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── 6. Final Call to Action ── */}
+      <div className="container">
+        <ScrollReveal>
+          <div className="final-cta-banner">
+            <div style={{ position: 'relative', zIndex: 1, maxWidth: '640px', margin: '0 auto' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.25)',
+                  color: '#93C5FD',
+                  fontSize: '0.78125rem',
+                  fontWeight: 600,
+                  marginBottom: '1rem',
+                }}
+              >
+                <Sparkles size={14} />
+                Start Connecting Today
+              </span>
+
+              <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.75rem)', fontWeight: 800, margin: '0 0 1rem', letterSpacing: '-0.03em' }}>
+                Ready to accelerate your tech career?
+              </h2>
+
+              <p style={{ fontSize: '1.0625rem', color: '#CBD5E1', lineHeight: 1.6, marginBottom: '2rem' }}>
+                Join thousands of developers and tech employees who are unlocking opportunities and building real relationships. It takes less than 2 minutes to get started.
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <Link to="/register?role=seeker" className="btn btn-primary btn-lg" style={{ backgroundColor: '#3B82F6' }}>
+                  Join as Job Seeker →
+                </Link>
+                <Link to="/register?role=referrer" className="btn btn-outline btn-lg" style={{ color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'transparent' }}>
+                  Join as Employee Referrer
+                </Link>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      </div>
     </div>
   );
 };

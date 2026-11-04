@@ -1,11 +1,25 @@
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import UserCard from '../components/UserCard';
+import { SkeletonUserCard } from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import { 
+  Search, 
+  X, 
+  Filter, 
+  Building2, 
+  Code2, 
+  Sparkles, 
+  Star, 
+  SlidersHorizontal,
+  Users,
+  Briefcase
+} from 'lucide-react';
 
-// ─── Debounce hook ───────────────────────────────────────────────
-const useDebounce = (value, delay = 400) => {
+// Debounce hook
+const useDebounce = (value, delay = 350) => {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(value), delay);
@@ -14,602 +28,507 @@ const useDebounce = (value, delay = 400) => {
   return debounced;
 };
 
-// ─── Skeleton card ───────────────────────────────────────────────
-const SkeletonCard = () => (
-  <div className="dc-disc__skeleton">
-    <div className="dc-disc__sk-avatar" />
-    <div className="dc-disc__sk-line dc-disc__sk-line--wide" />
-    <div className="dc-disc__sk-line dc-disc__sk-line--mid" />
-    <div className="dc-disc__sk-chips">
-      <div className="dc-disc__sk-chip" />
-      <div className="dc-disc__sk-chip" />
-      <div className="dc-disc__sk-chip" />
-    </div>
-  </div>
-);
+const POPULAR_COMPANIES = ['All', 'Google', 'Microsoft', 'Meta', 'Amazon', 'Stripe', 'Apple', 'Netflix'];
+const POPULAR_SKILLS = ['React', 'Node.js', 'Python', 'TypeScript', 'Java', 'AWS', 'Go'];
 
-// ─── Empty state ─────────────────────────────────────────────────
-const EmptyState = ({ query, type }) => (
-  <div className="dc-disc__empty">
-    <div className="dc-disc__empty-icon">🔍</div>
-    <h3 className="dc-disc__empty-title">No results found</h3>
-    <p className="dc-disc__empty-desc">
-      No users matched{' '}
-      <strong>"{query}"</strong> in{' '}
-      <strong>{type === 'company' ? 'companies' : 'skills'}</strong>.
-      <br />Try a different keyword or switch search type.
-    </p>
-  </div>
-);
-
-// ─── Main component ──────────────────────────────────────────────
 const Discover = () => {
-  const [users, setUsers]               = useState([]);
-  const [searchInput, setSearchInput]   = useState('');
-  const [searchType, setSearchType]     = useState('company');
-  const [loading, setLoading]           = useState(true);
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sentRequests, setSentRequests] = useState([]);
-  const [totalCount, setTotalCount]     = useState(0);
-  const [error, setError]               = useState(null);
 
-  const searchParam = useDebounce(searchInput, 400);
-  const inputRef    = useRef(null);
+  // Filters
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('All');
+  const [selectedRole, setSelectedRole] = useState('all'); // 'all', 'employee', 'developer'
+  const [selectedSkill, setSelectedSkill] = useState('');
+  const [sortBy, setSortBy] = useState('featured'); // 'featured', 'rating', 'newest'
 
-  const { user, loading: authLoading }  = useContext(AuthContext);
-  const navigate  = useNavigate();
+  const debouncedSearch = useDebounce(searchInput, 350);
 
-  const fetchUsers = useCallback(async () => {
+  // Fetch users & referral history
+  const fetchData = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
       setError(null);
 
-      const { data: usersData } = await axios.get(`/users/discover?keyword=${searchParam}`);
+      // Backend search query
+      const { data: usersData } = await axios.get(`/users/discover?keyword=${encodeURIComponent(debouncedSearch)}`);
+      setUsers(usersData);
 
-      let filtered = usersData;
-      if (searchType === 'skills' && searchParam) {
-        filtered = usersData.filter(
-          (u) => u.skills?.some((s) => s.toLowerCase().includes(searchParam.toLowerCase()))
-        );
-      }
-
-      setUsers(filtered);
-      setTotalCount(filtered.length);
-
+      // If developer, fetch sent referral requests to mark them
       if (user.role === 'developer') {
-        const { data: referralsData } = await axios.get('/referrals/history');
-        setSentRequests(referralsData.map((ref) => ref.referrer._id || ref.referrer));
+        try {
+          const { data: referralsData } = await axios.get('/referrals/history');
+          const ids = referralsData.map((ref) => {
+            if (typeof ref.referrer === 'object' && ref.referrer?._id) {
+              return ref.referrer._id;
+            }
+            return ref.referrer;
+          });
+          setSentRequests(ids);
+        } catch {
+          // Non-critical, ignore
+        }
       }
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Something went wrong. Please try again.');
+      console.error('Error fetching discovery users:', err);
+      setError('Unable to load professionals. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [searchParam, searchType, user]);
+  }, [debouncedSearch, user]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate('/login'); return; }
-    fetchUsers();
-  }, [authLoading, fetchUsers, user, navigate]);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchData();
+  }, [authLoading, user, navigate, fetchData]);
 
-  const handleTypeChange = (type) => {
-    setSearchType(type);
+  // Client-side filtering & sorting
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      // Company filter
+      if (selectedCompany !== 'All') {
+        if (!u.company || !u.company.toLowerCase().includes(selectedCompany.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Role filter
+      if (selectedRole !== 'all') {
+        if (u.role !== selectedRole) {
+          return false;
+        }
+      }
+
+      // Skill filter
+      if (selectedSkill) {
+        if (!u.skills || !u.skills.some((s) => s.toLowerCase().includes(selectedSkill.toLowerCase()))) {
+          return false;
+        }
+      }
+
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === 'rating') {
+        return (b.rating || 0) - (a.rating || 0);
+      }
+      if (sortBy === 'newest') {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+      // Featured: Referrers with ratings first, then active profiles
+      const scoreA = (a.role === 'employee' ? 10 : 0) + (a.rating || 0) + (a.resumeUrl ? 2 : 0);
+      const scoreB = (b.role === 'employee' ? 10 : 0) + (b.rating || 0) + (b.resumeUrl ? 2 : 0);
+      return scoreB - scoreA;
+    });
+  }, [users, selectedCompany, selectedRole, selectedSkill, sortBy]);
+
+  const clearAllFilters = () => {
     setSearchInput('');
-    inputRef.current?.focus();
+    setSelectedCompany('All');
+    setSelectedRole('all');
+    setSelectedSkill('');
+    setSortBy('featured');
   };
 
-  const clearSearch = () => {
-    setSearchInput('');
-    inputRef.current?.focus();
-  };
+  const hasActiveFilters = searchInput || selectedCompany !== 'All' || selectedRole !== 'all' || selectedSkill;
 
-  if (authLoading) return <div style={{ padding: '6rem', textAlign: 'center', color: '#fff' }}>Finding experts...</div>;
-  if (!user) return null;
-
-  const placeholders = {
-    company: 'Search by company (Google, Meta…)',
-    skills:  'Search by skill (React, Python, Go…)',
-  };
+  if (authLoading) {
+    return (
+      <div className="container" style={{ paddingTop: '5rem', textAlign: 'center' }}>
+        <div className="spinner spinner-primary" style={{ width: '2rem', height: '2rem', margin: '0 auto 1rem' }} />
+        <p style={{ color: 'var(--text-secondary)' }}>Connecting to network...</p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+    <div style={{ backgroundColor: 'var(--bg-page)', minHeight: 'calc(100vh - 72px)', paddingBottom: '4rem' }}>
+      {/* Hero Header */}
+      <section
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid var(--border-main)',
+          paddingTop: '2.5rem',
+          paddingBottom: '2.5rem',
+        }}
+      >
+        <div className="container">
+          <div style={{ maxWidth: '780px', margin: '0 auto', textAlign: 'center' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: '#EFF6FF',
+                color: '#1D4ED8',
+                border: '1px solid #DBEAFE',
+                fontSize: '0.78125rem',
+                fontWeight: 600,
+                marginBottom: '1rem',
+              }}
+            >
+              <Sparkles size={14} color="#3B82F6" />
+              Verified Tech Network & Referrals
+            </span>
 
-        .dc-disc {
-          --d-bg:         #070c18;
-          --d-surface:    #0f172a;
-          --d-surface-2:  #1e293b;
-          --d-border:     rgba(99,179,237,0.1);
-          --d-accent:     #38bdf8;
-          --d-accent-2:   #818cf8;
-          --d-gradient:   linear-gradient(135deg,#38bdf8,#818cf8);
-          --d-glow:       rgba(56,189,248,0.1);
-          --d-text-1:     #f1f5f9;
-          --d-text-2:     #94a3b8;
-          --d-text-3:     #64748b;
-          --d-danger:     #ef4444;
-          --d-danger-bg:  rgba(239,68,68,0.08);
-          font-family: 'DM Sans', sans-serif;
-          background: var(--d-bg);
-          min-height: calc(100vh - 140px);
-          padding: 3.5rem 1.5rem 4rem;
-          position: relative;
-          overflow: hidden;
-          color: var(--d-text-2);
-        }
-
-        /* Ambient glows */
-        .dc-disc__glow-a, .dc-disc__glow-b {
-          position: fixed;
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 0;
-        }
-        .dc-disc__glow-a {
-          width: 560px; height: 560px;
-          top: -180px; right: -100px;
-          background: radial-gradient(circle, rgba(56,189,248,0.05) 0%, transparent 70%);
-        }
-        .dc-disc__glow-b {
-          width: 480px; height: 480px;
-          bottom: -150px; left: -80px;
-          background: radial-gradient(circle, rgba(129,140,248,0.05) 0%, transparent 70%);
-        }
-
-        .dc-disc__inner {
-          max-width: 1200px;
-          margin: 0 auto;
-          position: relative;
-          z-index: 1;
-        }
-
-        /* ── Hero ── */
-        .dc-disc__hero {
-          text-align: center;
-          margin-bottom: 3rem;
-        }
-
-        .dc-disc__hero-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.72rem;
-          font-weight: 600;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: var(--d-accent);
-          background: rgba(56,189,248,0.1);
-          border: 1px solid rgba(56,189,248,0.2);
-          padding: 5px 14px;
-          border-radius: 100px;
-          margin-bottom: 1.25rem;
-        }
-
-        .dc-disc__hero-dot {
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: var(--d-accent);
-          box-shadow: 0 0 8px var(--d-accent);
-          animation: discPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes discPulse {
-          0%,100% { opacity: 1; transform: scale(1); }
-          50%      { opacity: 0.5; transform: scale(0.7); }
-        }
-
-        .dc-disc__hero-title {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(1.9rem, 4vw, 2.8rem);
-          font-weight: 800;
-          color: var(--d-text-1);
-          margin: 0 0 0.9rem;
-          letter-spacing: -0.5px;
-          line-height: 1.15;
-        }
-
-        .dc-disc__hero-title span {
-          background: var(--d-gradient);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .dc-disc__hero-desc {
-          font-size: 1rem;
-          color: var(--d-text-3);
-          max-width: 520px;
-          margin: 0 auto;
-          line-height: 1.7;
-        }
-
-        /* ── Search box ── */
-        .dc-disc__search-wrap {
-          max-width: 680px;
-          margin: 0 auto 2rem;
-        }
-
-        .dc-disc__search-box {
-          background: var(--d-surface);
-          border: 1.5px solid var(--d-border);
-          border-radius: 16px;
-          padding: 6px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .dc-disc__search-box:focus-within {
-          border-color: rgba(56,189,248,0.4);
-          box-shadow: 0 0 0 4px rgba(56,189,248,0.07);
-        }
-
-        /* Type toggle pills */
-        .dc-disc__type-toggle {
-          display: flex;
-          gap: 4px;
-          flex-shrink: 0;
-          padding: 2px;
-        }
-
-        .dc-disc__type-btn {
-          border: none;
-          border-radius: 10px;
-          padding: 8px 14px;
-          font-family: 'Syne', sans-serif;
-          font-size: 0.775rem;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          cursor: pointer;
-          transition: all 0.18s ease;
-          background: transparent;
-          color: var(--d-text-3);
-          white-space: nowrap;
-        }
-
-        .dc-disc__type-btn--active {
-          background: var(--d-gradient);
-          color: #fff;
-          box-shadow: 0 2px 12px rgba(56,189,248,0.2);
-        }
-
-        .dc-disc__type-btn:hover:not(.dc-disc__type-btn--active) {
-          background: var(--d-surface-2);
-          color: var(--d-text-2);
-        }
-
-        /* Divider */
-        .dc-disc__search-sep {
-          width: 1px;
-          height: 22px;
-          background: var(--d-border);
-          flex-shrink: 0;
-        }
-
-        /* Input */
-        .dc-disc__search-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          outline: none;
-          color: var(--d-text-1);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.95rem;
-          padding: 8px 6px;
-          min-width: 0;
-        }
-
-        .dc-disc__search-input::placeholder { color: var(--d-text-3); }
-
-        /* Search icon + clear btn */
-        .dc-disc__search-icon {
-          color: var(--d-text-3);
-          flex-shrink: 0;
-          padding: 0 4px;
-          display: flex;
-        }
-
-        .dc-disc__clear-btn {
-          background: var(--d-surface-2);
-          border: none;
-          border-radius: 8px;
-          width: 28px; height: 28px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          color: var(--d-text-3);
-          flex-shrink: 0;
-          transition: all 0.15s;
-        }
-
-        .dc-disc__clear-btn:hover { background: var(--d-border); color: var(--d-text-2); }
-
-        /* Results meta */
-        .dc-disc__meta {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          max-width: 680px;
-          margin: 0 auto;
-          padding: 0 2px;
-          min-height: 24px;
-        }
-
-        .dc-disc__meta-count {
-          font-size: 0.82rem;
-          color: var(--d-text-3);
-        }
-
-        .dc-disc__meta-count strong {
-          color: var(--d-accent);
-          font-weight: 600;
-        }
-
-        .dc-disc__meta-kbd {
-          font-size: 0.72rem;
-          color: var(--d-text-3);
-          background: var(--d-surface);
-          border: 1px solid var(--d-border);
-          border-radius: 5px;
-          padding: 2px 7px;
-          letter-spacing: 0.02em;
-        }
-
-        /* ── Grid ── */
-        .dc-disc__grid {
-          margin-top: 2.5rem;
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 1.5rem;
-        }
-
-        /* ── Skeleton ── */
-        .dc-disc__skeleton {
-          background: var(--d-surface);
-          border: 1px solid var(--d-border);
-          border-radius: 16px;
-          padding: 1.5rem;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .dc-disc__sk-avatar {
-          width: 56px; height: 56px;
-          border-radius: 50%;
-          background: var(--d-surface-2);
-          animation: dcShimmer 1.4s ease-in-out infinite;
-        }
-
-        .dc-disc__sk-line {
-          height: 12px;
-          border-radius: 6px;
-          background: var(--d-surface-2);
-          animation: dcShimmer 1.4s ease-in-out infinite;
-        }
-
-        .dc-disc__sk-line--wide { width: 70%; }
-        .dc-disc__sk-line--mid  { width: 45%; }
-
-        .dc-disc__sk-chips {
-          display: flex; gap: 8px; margin-top: 4px;
-        }
-
-        .dc-disc__sk-chip {
-          height: 24px; width: 60px;
-          border-radius: 100px;
-          background: var(--d-surface-2);
-          animation: dcShimmer 1.4s ease-in-out infinite;
-        }
-
-        @keyframes dcShimmer {
-          0%,100% { opacity: 0.5; }
-          50%      { opacity: 1;   }
-        }
-
-        /* ── Empty state ── */
-        .dc-disc__empty {
-          text-align: center;
-          padding: 5rem 1rem;
-          grid-column: 1 / -1;
-        }
-
-        .dc-disc__empty-icon {
-          font-size: 3rem;
-          margin-bottom: 1rem;
-          filter: grayscale(0.3);
-        }
-
-        .dc-disc__empty-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: var(--d-text-1);
-          margin: 0 0 0.6rem;
-        }
-
-        .dc-disc__empty-desc {
-          font-size: 0.9rem;
-          color: var(--d-text-3);
-          line-height: 1.7;
-          max-width: 360px;
-          margin: 0 auto;
-        }
-
-        .dc-disc__empty-desc strong { color: var(--d-text-2); }
-
-        /* ── Error ── */
-        .dc-disc__error {
-          background: var(--d-danger-bg);
-          border: 1px solid rgba(239,68,68,0.2);
-          color: var(--d-danger);
-          border-radius: 12px;
-          padding: 1rem 1.25rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 2rem;
-          font-size: 0.875rem;
-        }
-
-        .dc-disc__error-retry {
-          background: rgba(239,68,68,0.15);
-          border: none;
-          border-radius: 8px;
-          padding: 6px 14px;
-          color: var(--d-danger);
-          font-family: 'Syne', sans-serif;
-          font-size: 0.78rem;
-          font-weight: 700;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: background 0.15s;
-          flex-shrink: 0;
-        }
-
-        .dc-disc__error-retry:hover { background: rgba(239,68,68,0.25); }
-
-        /* ── Responsive ── */
-        @media (max-width: 600px) {
-          .dc-disc { padding: 2.5rem 1rem 3rem; }
-
-          .dc-disc__search-box {
-            flex-wrap: wrap;
-            border-radius: 14px;
-          }
-
-          .dc-disc__type-toggle {
-            width: 100%;
-            justify-content: stretch;
-          }
-
-          .dc-disc__type-btn { flex: 1; text-align: center; }
-
-          .dc-disc__search-sep { display: none; }
-
-          .dc-disc__grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
-
-      <div className="dc-disc">
-        <div className="dc-disc__glow-a" aria-hidden="true" />
-        <div className="dc-disc__glow-b" aria-hidden="true" />
-
-        <div className="dc-disc__inner">
-
-          {/* Hero */}
-          <div className="dc-disc__hero">
-            <div className="dc-disc__hero-tag">
-              <span className="dc-disc__hero-dot" />
-              {user.role === 'developer' ? 'Find Your Referrer' : 'Discover Developers'}
-            </div>
-            <h1 className="dc-disc__hero-title">
-              {user.role === 'developer' ? (
-                <>Discover <span>Tech Referrers</span></>
-              ) : (
-                <>Explore <span>Developer Talent</span></>
-              )}
+            <h1
+              style={{
+                fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.03em',
+                marginBottom: '0.75rem',
+                lineHeight: 1.2,
+              }}
+            >
+              Discover Industry Professionals & Referrers
             </h1>
-            <p className="dc-disc__hero-desc">
-              {user.role === 'developer'
-                ? 'Find employees at top tech companies who can refer you to your dream job.'
-                : 'Browse talented developers looking for referrals. Search by skills or company interest.'}
+
+            <p
+              style={{
+                fontSize: '1rem',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.6,
+                maxWidth: '620px',
+                margin: '0 auto 1.75rem',
+              }}
+            >
+              Connect directly with verified software engineers and employees at your target tech companies. Request referrals and expand your career network.
             </p>
-          </div>
 
-          {/* Search */}
-          <div className="dc-disc__search-wrap">
-            <div className="dc-disc__search-box">
-              <div className="dc-disc__type-toggle">
-                {['company', 'skills'].map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    className={`dc-disc__type-btn ${searchType === t ? 'dc-disc__type-btn--active' : ''}`}
-                    onClick={() => handleTypeChange(t)}
-                  >
-                    {t === 'company' ? '🏢 Company' : '⚡ Skills'}
-                  </button>
-                ))}
-              </div>
-
-              <div className="dc-disc__search-sep" />
-
-              <span className="dc-disc__search-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-              </span>
-
+            {/* Central Search Bar */}
+            <div
+              style={{
+                position: 'relative',
+                maxWidth: '640px',
+                margin: '0 auto',
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                border: '1.5px solid var(--border-main)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-md)',
+                padding: '6px 10px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Search size={20} style={{ color: 'var(--text-subtle)', marginLeft: '6px', flexShrink: 0 }} />
               <input
-                ref={inputRef}
                 type="text"
-                className="dc-disc__search-input"
-                placeholder={placeholders[searchType]}
+                placeholder="Search by name, company, skill (e.g. Google, React, Meta)..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                aria-label={`Search by ${searchType}`}
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  padding: '8px 12px',
+                  fontSize: '0.9375rem',
+                  color: 'var(--text-primary)',
+                  backgroundColor: 'transparent',
+                }}
               />
-
               {searchInput && (
                 <button
-                  type="button"
-                  className="dc-disc__clear-btn"
-                  onClick={clearSearch}
+                  onClick={() => setSearchInput('')}
+                  style={{
+                    padding: '4px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg-muted)',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                   aria-label="Clear search"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M18 6 6 18M6 6l12 12"/>
-                  </svg>
+                  <X size={14} />
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Meta row */}
-            <div className="dc-disc__meta">
-              {!loading && !error && (
-                <span className="dc-disc__meta-count">
-                  <strong>{totalCount}</strong> {totalCount === 1 ? 'result' : 'results'} found
-                </span>
+      {/* Main Discover Content */}
+      <div className="container" style={{ paddingTop: '2rem' }}>
+        {/* Filter Controls Bar */}
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid var(--border-main)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.75rem',
+            boxShadow: 'var(--shadow-xs)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
+          {/* Top Filter Row: Role selector + Sort by + Reset */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            {/* Role Radio Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-muted)', padding: '4px', borderRadius: 'var(--radius-md)' }}>
+              <button
+                onClick={() => setSelectedRole('all')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  backgroundColor: selectedRole === 'all' ? '#FFFFFF' : 'transparent',
+                  color: selectedRole === 'all' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  boxShadow: selectedRole === 'all' ? 'var(--shadow-xs)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                All Members
+              </button>
+              <button
+                onClick={() => setSelectedRole('employee')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  backgroundColor: selectedRole === 'employee' ? '#FFFFFF' : 'transparent',
+                  color: selectedRole === 'employee' ? '#15803D' : 'var(--text-secondary)',
+                  boxShadow: selectedRole === 'employee' ? 'var(--shadow-xs)' : 'none',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Building2 size={13} />
+                Referrers
+              </button>
+              <button
+                onClick={() => setSelectedRole('developer')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  backgroundColor: selectedRole === 'developer' ? '#FFFFFF' : 'transparent',
+                  color: selectedRole === 'developer' ? '#1D4ED8' : 'var(--text-secondary)',
+                  boxShadow: selectedRole === 'developer' ? 'var(--shadow-xs)' : 'none',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Code2 size={13} />
+                Job Seekers
+              </button>
+            </div>
+
+            {/* Sort Dropdown & Clear Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="form-select"
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '0.8125rem',
+                    width: 'auto',
+                    borderRadius: 'var(--radius-sm)',
+                  }}
+                >
+                  <option value="featured">Featured / Recommended</option>
+                  <option value="rating">Top Rated Referrers</option>
+                  <option value="newest">Recently Joined</option>
+                </select>
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  style={{
+                    fontSize: '0.8125rem',
+                    color: 'var(--danger)',
+                    padding: '4px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <X size={14} />
+                  Clear filters
+                </button>
               )}
-              <span className="dc-disc__meta-kbd">⌘ K to focus</span>
             </div>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="dc-disc__error" role="alert">
-              <span>⚠️ {error}</span>
-              <button className="dc-disc__error-retry" onClick={fetchUsers}>Retry</button>
+          {/* Quick Company Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
+            <span style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              Companies:
+            </span>
+            {POPULAR_COMPANIES.map((comp) => {
+              const active = selectedCompany === comp;
+              return (
+                <button
+                  key={comp}
+                  onClick={() => setSelectedCompany(comp)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    fontWeight: active ? 600 : 500,
+                    backgroundColor: active ? '#172554' : 'var(--bg-muted)',
+                    color: active ? '#FFFFFF' : 'var(--text-secondary)',
+                    border: `1px solid ${active ? '#172554' : 'var(--border-main)'}`,
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {comp}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Skill Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
+            <span style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              Skills:
+            </span>
+            {POPULAR_SKILLS.map((skill) => {
+              const active = selectedSkill.toLowerCase() === skill.toLowerCase();
+              return (
+                <button
+                  key={skill}
+                  onClick={() => setSelectedSkill(active ? '' : skill)}
+                  style={{
+                    padding: '3px 9px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: active ? 600 : 500,
+                    backgroundColor: active ? '#EFF6FF' : '#FFFFFF',
+                    color: active ? '#1D4ED8' : 'var(--text-secondary)',
+                    border: `1px solid ${active ? '#93C5FD' : 'var(--border-main)'}`,
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {skill}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Results Metadata Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1.25rem',
+            padding: '0 4px',
+          }}
+        >
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+            Showing <strong style={{ color: 'var(--text-primary)' }}>{filteredUsers.length}</strong> {filteredUsers.length === 1 ? 'professional' : 'professionals'}
+            {selectedCompany !== 'All' && <span> at <strong>{selectedCompany}</strong></span>}
+            {selectedRole !== 'all' && <span> ({selectedRole === 'employee' ? 'Referrers' : 'Job Seekers'})</span>}
+          </div>
+
+          {user.role === 'developer' && (
+            <div style={{ fontSize: '0.8125rem', color: 'var(--primary-blue)', fontWeight: 500 }}>
+              💡 Click "Request Referral" on any employee card
             </div>
           )}
-
-          {/* Grid */}
-          <div className="dc-disc__grid">
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            ) : users.length === 0 ? (
-              <EmptyState query={searchInput} type={searchType} />
-            ) : (
-              users.map((u) => (
-                <UserCard
-                  key={u._id}
-                  employee={u}
-                  hasRequested={sentRequests.includes(u._id)}
-                />
-              ))
-            )}
-          </div>
-
         </div>
+
+        {/* Error Feedback */}
+        {error && (
+          <div
+            style={{
+              padding: '1rem',
+              backgroundColor: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: 'var(--radius-md)',
+              color: '#B91C1C',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span>{error}</span>
+            <button onClick={fetchData} className="btn btn-secondary btn-sm">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Profile Cards Grid */}
+        {loading ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonUserCard key={i} />
+            ))}
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <EmptyState
+            type="users"
+            title="No professionals found matching your criteria"
+            description="Try clearing your search query or selecting a different company or skill filter."
+            actionLabel="Reset All Filters"
+            onAction={clearAllFilters}
+          />
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
+            {filteredUsers.map((item, idx) => (
+              <UserCard
+                key={item._id}
+                employee={item}
+                hasRequested={sentRequests.includes(item._id)}
+                index={idx}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
